@@ -1,0 +1,546 @@
+<!-- Smart ID Card PDF Cropper — Elementor HTML Widget
+     Paste this entire code into an Elementor HTML widget.
+     PDF processing happens locally in the visitor's browser.
+-->
+<div id="sicp-tool" class="sicp">
+  <div class="sicp-head">
+    <div>
+      <h2>Smart ID Card PDF Cropper</h2>
+      <p>Upload an ID card PDF, pin the four corners of both sides, and create a print-ready sheet.</p>
+    </div>
+    <span class="sicp-private">🔒 Files stay on your device</span>
+  </div>
+
+  <div class="sicp-upload" id="sicp-drop">
+    <div class="sicp-upload-icon">⇧</div>
+    <strong>Drop your PDF here</strong>
+    <span>or choose a file from your device</span>
+    <label class="sicp-button sicp-primary" for="sicp-file">Choose PDF</label>
+    <input id="sicp-file" type="file" accept="application/pdf,.pdf">
+    <small>PDF files only · Recommended maximum 20 MB</small>
+  </div>
+
+  <div class="sicp-status" id="sicp-status" aria-live="polite">Ready for a PDF.</div>
+
+  <div class="sicp-work" id="sicp-work" hidden>
+    <div class="sicp-toolbar">
+      <div>
+        <strong id="sicp-file-name">Document</strong>
+        <small id="sicp-page-count"></small>
+      </div>
+      <button type="button" class="sicp-button sicp-light" id="sicp-clear">Start over</button>
+    </div>
+
+    <div class="sicp-instructions">
+      <strong>How selection works</strong>
+      <ol>
+        <li>Upload your PDF.</li>
+        <li>Click <b>Pin 4 corners</b>.</li>
+        <li>Click the four corners in this order:
+          <ul>
+            <li>Top-left</li>
+            <li>Top-right</li>
+            <li>Bottom-right</li>
+            <li>Bottom-left</li>
+          </ul>
+        </li>
+        <li>The tool connects the four points with a green border.</li>
+        <li>Assign the selection as <b>Front</b> or <b>Back</b>.</li>
+        <li>Repeat for the other side and download your PDF.</li>
+      </ol>
+      <p>You can use <b>Reset corners</b> to start a selection again.</p>
+    </div>
+
+    <div class="sicp-pages" id="sicp-pages"></div>
+
+    <div class="sicp-selection">
+      <h3>Selected card sides</h3>
+      <div class="sicp-side-grid">
+        <div class="sicp-side-card">
+          <div class="sicp-side-title"><strong>Front</strong><span id="sicp-front-label">Not selected</span></div>
+          <canvas id="sicp-front-preview" width="430" height="270"></canvas>
+          <button type="button" class="sicp-button sicp-light" id="sicp-set-front">Use current selection as Front</button>
+        </div>
+        <div class="sicp-side-card">
+          <div class="sicp-side-title"><strong>Back</strong><span id="sicp-back-label">Not selected</span></div>
+          <canvas id="sicp-back-preview" width="430" height="270"></canvas>
+          <button type="button" class="sicp-button sicp-light" id="sicp-set-back">Use current selection as Back</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sicp-settings">
+      <h3>Print settings</h3>
+      <div class="sicp-fields">
+        <label>Paper size
+          <select id="sicp-paper"><option value="a4">A4</option><option value="letter">US Letter</option></select>
+        </label>
+        <label>Card width (mm)<input id="sicp-width" type="number" min="20" max="200" step="0.1" value="85.6"></label>
+        <label>Card height (mm)<input id="sicp-height" type="number" min="20" max="200" step="0.1" value="53.98"></label>
+        <label>Layout
+          <select id="sicp-layout"><option value="side">Front + back side by side</option><option value="stack">Front + back stacked</option><option value="duplex">Two pages for duplex printing</option></select>
+        </label>
+        <label>Copies<input id="sicp-copies" type="number" min="1" max="8" value="1"></label>
+        <label>Output resolution
+          <select id="sicp-dpi"><option value="300">300 DPI</option><option value="400">400 DPI</option><option value="600">600 DPI</option><option value="200">200 DPI</option><option value="150">150 DPI</option></select>
+        </label>
+      </div>
+      <p class="sicp-note">Standard ID-1 card size is 85.60 × 53.98 mm. Other ID documents may use different dimensions. Choose the correct size for your document.</p>
+    </div>
+
+    <div class="sicp-preview-area">
+      <h3>Print layout preview</h3>
+      <div id="sicp-layout-preview" class="sicp-paper-preview">Select both Front and Back to preview your print layout.</div>
+      <button type="button" class="sicp-button sicp-primary sicp-download" id="sicp-download" disabled>Download print-ready PDF</button>
+      <small class="sicp-note">When printing, select “Actual size” or “100%” and disable “Fit to page”. Verify the dimensions with a test print.</small>
+    </div>
+  </div>
+  <div class="sicp-foot">Your PDF is processed in this browser. It is not sent to this website by this tool.</div>
+</div>
+
+<style>
+#sicp-tool{--sicp-blue:#2457d6;--sicp-border:#dce1e8;--sicp-text:#172033;--sicp-muted:#657086;max-width:100%;color:var(--sicp-text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#sicp-tool *{box-sizing:border-box}
+#sicp-tool .sicp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px}
+#sicp-tool h2{font-size:clamp(22px,3vw,30px);margin:0 0 6px;font-weight:750}
+#sicp-tool h3{font-size:18px;margin:0 0 14px}
+#sicp-tool p{margin:0;color:var(--sicp-muted)}
+#sicp-tool .sicp-private{font-size:12px;background:#eaf7ef;color:#17633a;padding:7px 10px;border-radius:20px;white-space:nowrap}
+#sicp-tool .sicp-upload{border:2px dashed #aab6c8;border-radius:14px;padding:30px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:7px;background:#f8faff}
+#sicp-tool .sicp-upload-icon{font-size:30px;color:var(--sicp-blue)}
+#sicp-tool .sicp-upload span,#sicp-tool small{color:var(--sicp-muted);font-size:12px}
+#sicp-tool input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+#sicp-tool .sicp-button{border:0;border-radius:8px;padding:10px 15px;font-weight:650;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;min-height:40px}
+#sicp-tool .sicp-primary{background:var(--sicp-blue);color:#fff}
+#sicp-tool .sicp-light{background:#edf1f7;color:#26334a}
+#sicp-tool button:disabled{opacity:.45;cursor:not-allowed}
+#sicp-tool .sicp-status{margin:12px 0;color:var(--sicp-muted);font-size:13px;min-height:20px}
+#sicp-tool .sicp-work{border:1px solid var(--sicp-border);border-radius:13px;padding:16px;margin-top:12px}
+#sicp-tool .sicp-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+#sicp-tool .sicp-toolbar small{display:block}
+#sicp-tool .sicp-instructions{padding:12px;background:#f1f5ff;border-radius:9px;font-size:13px;margin-bottom:16px}
+#sicp-tool .sicp-pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:16px}
+#sicp-tool .sicp-page{border:1px solid var(--sicp-border);border-radius:10px;padding:10px;min-width:0}
+#sicp-tool .sicp-page-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
+#sicp-tool .sicp-canvas-wrap{position:relative;width:100%;background:#eef1f5;overflow:hidden;border-radius:6px;touch-action:pan-y}
+#sicp-tool .sicp-page canvas{display:block;width:100%;height:auto;cursor:crosshair}
+#sicp-tool .sicp-page-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+#sicp-tool .sicp-page-actions button{font-size:12px;padding:7px 9px;min-height:34px}
+#sicp-tool .sicp-instructions strong{display:block;margin-bottom:4px}
+#sicp-tool .sicp-instructions ol{margin:6px 0 8px 22px;padding:0;list-style:decimal}
+#sicp-tool .sicp-instructions ul{margin:2px 0 2px 20px;padding:0;list-style:disc}
+#sicp-tool .sicp-instructions li{margin:2px 0;padding:0}
+#sicp-tool .sicp-instructions p{color:inherit;margin:4px 0 0}
+#sicp-tool .sicp-page-actions .sicp-pin{background:#16a34a;color:#fff}
+#sicp-tool .sicp-selection,#sicp-tool .sicp-settings,#sicp-tool .sicp-preview-area{border-top:1px solid var(--sicp-border);margin-top:22px;padding-top:18px}
+#sicp-tool .sicp-side-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#sicp-tool .sicp-side-card{border:1px solid var(--sicp-border);border-radius:10px;padding:10px;min-width:0}
+#sicp-tool .sicp-side-title{display:flex;justify-content:space-between;gap:8px;font-size:13px;margin-bottom:8px}
+#sicp-tool .sicp-side-title span{color:var(--sicp-muted)}
+#sicp-tool .sicp-side-card canvas{width:100%;height:auto;display:block;background:#f2f3f5;border-radius:5px;margin-bottom:8px}
+#sicp-tool .sicp-side-card button{width:100%;font-size:12px}
+#sicp-tool .sicp-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#sicp-tool .sicp-fields label{font-size:12px;font-weight:650;display:flex;flex-direction:column;gap:5px}
+#sicp-tool .sicp-fields input,#sicp-tool .sicp-fields select{width:100%;min-width:0;border:1px solid #cbd3df;border-radius:7px;padding:9px;background:#fff;color:#172033;font:inherit;font-size:14px}
+#sicp-tool .sicp-note{display:block;margin-top:10px;font-size:12px;color:var(--sicp-muted)}
+#sicp-tool .sicp-paper-preview{background:#eef1f5;border:1px solid var(--sicp-border);border-radius:9px;padding:12px;text-align:center;color:var(--sicp-muted);font-size:13px}
+#sicp-tool .sicp-paper-preview canvas{display:block;max-width:100%;height:auto;margin:auto;background:white;box-shadow:0 2px 10px #0002}
+#sicp-tool .sicp-download{width:100%;margin-top:14px;min-height:46px}
+#sicp-tool .sicp-foot{text-align:center;font-size:11px;color:var(--sicp-muted);margin-top:14px}
+@media(max-width:650px){#sicp-tool .sicp-head{display:block}#sicp-tool .sicp-private{display:inline-block;margin-top:10px}#sicp-tool .sicp-work{padding:11px}#sicp-tool .sicp-side-grid{grid-template-columns:1fr}#sicp-tool .sicp-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<script>
+(function(){
+  const root=document.getElementById('sicp-tool');
+  if(!root || root.dataset.initialized==='1') return;
+  root.dataset.initialized='1';
+
+  const $=id=>root.querySelector('#sicp-'+id);
+  const status=$('status'), pagesBox=$('pages'), work=$('work');
+  const state={pdf:null,pages:[],current:null,selection:null,front:null,back:null,urls:[]};
+  const PDFJS_VERSION='3.11.174';
+  const PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_VERSION+'/pdf.min.js';
+  const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_VERSION+'/pdf.worker.min.js';
+  const PDFLIB_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+
+  function loadScript(src){
+    return new Promise((resolve,reject)=>{
+      const existing=[...document.scripts].find(s=>s.src===src);
+      if(existing){if(existing.dataset.loaded==='1')return resolve();existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return;}
+      const s=document.createElement('script');s.src=src;s.async=true;
+      s.onload=()=>{s.dataset.loaded='1';resolve();};s.onerror=()=>reject(new Error('Could not load a required library: '+src));
+      document.head.appendChild(s);
+    });
+  }
+  function say(message){status.textContent=message;}
+  function clearState(){
+    state.pages.forEach(p=>{if(p.bitmap&&p.bitmap.close)p.bitmap.close();});
+    state.urls.forEach(URL.revokeObjectURL);state.urls=[];
+    state.pdf=null;state.pages=[];state.current=null;state.selection=null;state.front=null;state.back=null;
+    pagesBox.innerHTML='';$('front-label').textContent='Not selected';$('back-label').textContent='Not selected';
+    clearCanvas($('front-preview'));clearCanvas($('back-preview'));
+    $('layout-preview').textContent='Select both Front and Back to preview your print layout.';
+    $('download').disabled=true;work.hidden=true;$('file').value='';
+  }
+  function clearCanvas(c){c.getContext('2d').clearRect(0,0,c.width,c.height);}
+  const CORNER_NAMES=['top-left','top-right','bottom-right','bottom-left'];
+  const GREEN='#16a34a',RED='#dc2626';
+
+  function cardAspect(){const w=Number($('width').value),h=Number($('height').value);return(w>0&&h>0)?w/h:85.6/53.98;}
+
+  // Square (0,0)-(1,1) -> quad (TL,TR,BR,BL) perspective mapping.
+  function homography(q){
+    const x0=q[0].x,y0=q[0].y,x1=q[1].x,y1=q[1].y,x2=q[2].x,y2=q[2].y,x3=q[3].x,y3=q[3].y;
+    const dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3;
+    let g=0,h=0;
+    if(Math.abs(dx3)>1e-9||Math.abs(dy3)>1e-9){
+      const den=dx1*dy2-dx2*dy1;
+      g=(dx3*dy2-dx2*dy3)/den;h=(dx1*dy3-dx3*dy1)/den;
+    }
+    return{a:x1-x0+g*x1,b:x3-x0+h*x3,c:x0,d:y1-y0+g*y1,e:y3-y0+h*y3,f:y0,g,h};
+  }
+
+  // Cuts the quad (4 pinned corners) out of a canvas and straightens it into an outW x outH canvas.
+  function warpFromCanvas(srcCanvas,quad,outW,outH){
+    const xs=quad.map(p=>p.x),ys=quad.map(p=>p.y);
+    const bx=Math.max(0,Math.floor(Math.min(...xs))-2),by=Math.max(0,Math.floor(Math.min(...ys))-2);
+    const ex=Math.min(srcCanvas.width,Math.ceil(Math.max(...xs))+2),ey=Math.min(srcCanvas.height,Math.ceil(Math.max(...ys))+2);
+    const bw=Math.max(1,ex-bx),bh=Math.max(1,ey-by);
+    const sd=srcCanvas.getContext('2d').getImageData(bx,by,bw,bh).data;
+    const H=homography(quad.map(p=>({x:p.x-bx,y:p.y-by})));
+    const out=document.createElement('canvas');out.width=outW;out.height=outH;
+    const octx=out.getContext('2d',{alpha:false});
+    const dst=octx.createImageData(outW,outH),dd=dst.data;
+    for(let j=0;j<outH;j++){
+      const v=(j+.5)/outH;
+      for(let i=0;i<outW;i++){
+        const u=(i+.5)/outW,den=H.g*u+H.h*v+1;
+        let x=(H.a*u+H.b*v+H.c)/den-.5,y=(H.d*u+H.e*v+H.f)/den-.5;
+        if(x<0)x=0;else if(x>bw-1)x=bw-1;
+        if(y<0)y=0;else if(y>bh-1)y=bh-1;
+        const x0=x|0,y0=y|0,x1=Math.min(x0+1,bw-1),y1=Math.min(y0+1,bh-1),fx=x-x0,fy=y-y0;
+        const i00=(y0*bw+x0)*4,i10=(y0*bw+x1)*4,i01=(y1*bw+x0)*4,i11=(y1*bw+x1)*4;
+        const w00=(1-fx)*(1-fy),w10=fx*(1-fy),w01=(1-fx)*fy,w11=fx*fy,o=(j*outW+i)*4;
+        dd[o]=sd[i00]*w00+sd[i10]*w10+sd[i01]*w01+sd[i11]*w11;
+        dd[o+1]=sd[i00+1]*w00+sd[i10+1]*w10+sd[i01+1]*w01+sd[i11+1]*w11;
+        dd[o+2]=sd[i00+2]*w00+sd[i10+2]*w10+sd[i01+2]*w01+sd[i11+2]*w11;
+        dd[o+3]=255;
+      }
+    }
+    octx.putImageData(dst,0,0);
+    return out;
+  }
+
+  // Returns '' if the 4 corners form a valid clockwise quadrilateral, otherwise a message.
+  function quadError(q){
+    let pos=0,area=0;
+    for(let i=0;i<4;i++){
+      const a=q[i],b=q[(i+1)%4],c=q[(i+2)%4];
+      const cr=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);
+      if(cr>0)pos++;
+      area+=a.x*b.y-b.x*a.y;
+    }
+    if(Math.abs(area)/2<900)return 'The four corners are too close together. Click Reset corners and try again.';
+    if(pos!==4)return 'Corners must go clockwise: Top-left, Top-right, Bottom-right, Bottom-left. Drag a pin to fix it, or click Reset corners.';
+    return '';
+  }
+
+  function drawCropPreview(side,canvas){
+    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(!side){return;}
+    ctx.fillStyle='#f2f3f5';ctx.fillRect(0,0,canvas.width,canvas.height);
+    const asp=cardAspect();let w=canvas.width,h=w/asp;
+    if(h>canvas.height){h=canvas.height;w=h*asp;}
+    w=Math.round(w);h=Math.round(h);
+    const warped=warpFromCanvas(side.page.canvas,side.corners,w,h);
+    ctx.drawImage(warped,Math.round((canvas.width-w)/2),Math.round((canvas.height-h)/2));
+  }
+  function refreshSidePreviews(){['front','back'].forEach(w=>drawCropPreview(state[w],$(w+'-preview')));}
+
+  function setSide(which){
+    const sel=state.selection;
+    if(!sel||sel.corners.length!==4){say('First click Pin 4 corners on a page, then click Top-left, Top-right, Bottom-right and Bottom-left of the card.');return;}
+    state[which]={page:sel.page,corners:sel.corners.map(p=>({x:p.x,y:p.y}))};
+    drawCropPreview(state[which],$(which+'-preview'));
+    $(which+'-label').textContent='Page '+sel.page.number;
+    say(which==='front'?'Front side selected. Now pin the corners of the back side.':'Back side selected.');
+    if(state.front&&state.back)updateLayoutPreview();
+  }
+
+  function addPageCard(page){
+    page.corners=page.corners||[];page.pinning=!!page.pinning;
+    const card=document.createElement('section');card.className='sicp-page';
+    const head=document.createElement('div');head.className='sicp-page-head';
+    const title=document.createElement('strong');title.textContent='Page '+page.number;
+    const hint=document.createElement('span');
+    head.append(title,hint);
+    const wrap=document.createElement('div');wrap.className='sicp-canvas-wrap';
+    const canvas=document.createElement('canvas');canvas.width=page.canvas.width;canvas.height=page.canvas.height;
+    wrap.appendChild(canvas);
+    const actions=document.createElement('div');actions.className='sicp-page-actions';
+    const pinBtn=document.createElement('button');pinBtn.type='button';pinBtn.className='sicp-button sicp-pin';
+    const resetBtn=document.createElement('button');resetBtn.type='button';resetBtn.className='sicp-button sicp-light';resetBtn.textContent='Reset corners';
+    const full=document.createElement('button');full.type='button';full.className='sicp-button sicp-light';full.textContent='Select full page';
+    const rotate=document.createElement('button');rotate.type='button';rotate.className='sicp-button sicp-light';rotate.textContent='Rotate page 90°';
+    actions.append(pinBtn,resetBtn,full,rotate);card.append(head,wrap,actions);pagesBox.append(card);
+
+    function k(){const b=canvas.getBoundingClientRect();return b.width>0?canvas.width/b.width:1.5;}
+    function redraw(){
+      const c=canvas.getContext('2d'),pts=page.corners,n=pts.length,s=k();
+      c.clearRect(0,0,canvas.width,canvas.height);c.drawImage(page.canvas,0,0);
+      if(!n)return;
+      const bad=n===4&&quadError(pts)!=='',col=bad?RED:GREEN;
+      c.lineJoin='round';c.lineCap='round';
+      if(n>=2){
+        c.beginPath();c.moveTo(pts[0].x,pts[0].y);
+        for(let i=1;i<n;i++)c.lineTo(pts[i].x,pts[i].y);
+        if(n===4){c.closePath();c.fillStyle=bad?'rgba(220,38,38,.12)':'rgba(22,163,74,.14)';c.fill();}
+        c.strokeStyle='#fff';c.lineWidth=5*s;c.stroke();
+        c.strokeStyle=col;c.lineWidth=2.5*s;c.stroke();
+      }
+      const off=[[-1,-1],[1,-1],[1,1],[-1,1]];
+      pts.forEach((p,i)=>{
+        c.beginPath();c.arc(p.x,p.y,8*s,0,Math.PI*2);
+        c.strokeStyle='#fff';c.lineWidth=4.5*s;c.stroke();
+        c.strokeStyle=col;c.lineWidth=2*s;c.stroke();
+        c.beginPath();c.arc(p.x,p.y,2*s,0,Math.PI*2);c.fillStyle=col;c.fill();
+        c.font='bold '+(13*s)+'px system-ui,sans-serif';c.textAlign='center';c.textBaseline='middle';
+        const lx=p.x+off[i][0]*17*s,ly=p.y+off[i][1]*17*s;
+        c.lineWidth=4*s;c.strokeStyle='#fff';c.strokeText(String(i+1),lx,ly);
+        c.fillStyle=col;c.fillText(String(i+1),lx,ly);
+      });
+    }
+    function ui(){
+      const n=page.corners.length,pinning=page.pinning&&n<4;
+      if(pinning)hint.textContent='Click '+CORNER_NAMES[n]+' ('+(n+1)+'/4)';
+      else if(n===4)hint.textContent='Corners set · drag a pin to adjust';
+      else hint.textContent='Click “Pin 4 corners” to start';
+      pinBtn.textContent=pinning?'Pinning… '+n+'/4':'Pin 4 corners';
+      resetBtn.disabled=n===0&&!page.pinning;
+      canvas.style.cursor=pinning?'crosshair':'default';
+      canvas.style.touchAction=(pinning||n>0)?'none':'';
+    }
+    page.redraw=redraw;page.ui=ui;
+
+    function startPinning(msg){
+      state.pages.forEach(p=>{if(p!==page&&p.pinning){p.pinning=false;p.corners=[];if(p.ui)p.ui();if(p.redraw)p.redraw();}});
+      page.corners=[];page.pinning=true;
+      if(state.selection&&state.selection.page===page)state.selection=null;
+      ui();redraw();say(msg);
+    }
+    pinBtn.addEventListener('click',()=>startPinning('Click the top-left corner of the card on page '+page.number+'.'));
+    resetBtn.addEventListener('click',()=>startPinning('Corners reset. Click the top-left corner of the card.'));
+    full.addEventListener('click',()=>{
+      const W=page.canvas.width,H=page.canvas.height;
+      page.corners=[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];page.pinning=false;
+      state.current=page;state.selection={page,corners:page.corners};ui();redraw();
+      say('Full page selected. For best results, pin the four corners of the card only.');
+    });
+    rotate.addEventListener('click',()=>rotatePage(page));
+
+    function commit(){
+      if(page.corners.length<4)return;
+      const err=quadError(page.corners);
+      if(err){if(state.selection&&state.selection.page===page)state.selection=null;say(err);return;}
+      state.current=page;state.selection={page,corners:page.corners};
+      say('Card selected on page '+page.number+'. Assign it as Front or Back below.');
+    }
+    function point(e){const b=canvas.getBoundingClientRect();return{x:Math.max(0,Math.min(canvas.width,(e.clientX-b.left)*canvas.width/b.width)),y:Math.max(0,Math.min(canvas.height,(e.clientY-b.top)*canvas.height/b.height))};}
+    function hit(p){
+      const rad=18*k();let best=-1,bd=rad;
+      page.corners.forEach((q,i)=>{const d=Math.hypot(q.x-p.x,q.y-p.y);if(d<=bd){bd=d;best=i;}});
+      return best;
+    }
+    let dragIdx=-1;
+    canvas.addEventListener('pointerdown',e=>{
+      if(e.button!==undefined&&e.button!==0)return;
+      const p=point(e),idx=hit(p);
+      if(idx>=0){
+        e.preventDefault();dragIdx=idx;canvas.style.cursor='grabbing';
+        try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+      }else if(page.pinning&&page.corners.length<4){
+        e.preventDefault();
+        page.corners.push(p);
+        const n=page.corners.length;
+        if(n===4){page.pinning=false;commit();}
+        else say('Now click the '+CORNER_NAMES[n]+' corner.');
+        ui();redraw();
+      }
+    });
+    canvas.addEventListener('pointermove',e=>{
+      const p=point(e);
+      if(dragIdx>=0){page.corners[dragIdx]=p;redraw();return;}
+      if(e.pointerType==='mouse'){canvas.style.cursor=hit(p)>=0?'grab':(page.pinning&&page.corners.length<4?'crosshair':'default');}
+    });
+    function endDrag(){
+      if(dragIdx<0)return;
+      dragIdx=-1;ui();redraw();commit();
+    }
+    canvas.addEventListener('pointerup',endDrag);
+    canvas.addEventListener('pointercancel',endDrag);
+
+    ui();redraw();
+  }
+  function rotatePage(page){
+    const old=page.canvas,oldH=old.height,c=document.createElement('canvas');c.width=old.height;c.height=old.width;
+    const ctx=c.getContext('2d');ctx.translate(c.width/2,c.height/2);ctx.rotate(Math.PI/2);ctx.drawImage(old,-old.width/2,-old.height/2);
+    // Turn pinned corners with the page so they stay on the same spot of the card.
+    const rot=pts=>pts.map(p=>({x:oldH-p.y,y:p.x}));
+    page.canvas=c;page.rotation=(page.rotation+1)%4;page.corners=rot(page.corners);
+    [state.front,state.back].forEach(s=>{if(s&&s.page===page)s.corners=rot(s.corners);});
+    if(state.selection&&state.selection.page===page)state.selection=page.corners.length===4?{page,corners:page.corners}:null;
+    pagesBox.innerHTML='';state.pages.forEach(addPageCard);
+    refreshSidePreviews();if(state.front&&state.back)updateLayoutPreview();
+    say('Page rotated. Check the corner pins or pin them again.');
+  }
+  async function openPDF(file){
+    if(!file)return;
+    if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){say('Please choose a PDF file.');return;}
+    if(file.size>30*1024*1024){say('This file is larger than 30 MB. Please use a smaller PDF.');return;}
+    clearState();say('Loading PDF library…');
+    try{
+      await loadScript(PDFJS_URL);window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+      say('Reading PDF…');
+      const bytes=await file.arrayBuffer();
+      state.pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(bytes)}).promise;
+      $('file-name').textContent=file.name;$('page-count').textContent=state.pdf.numPages+' page(s)';
+      work.hidden=false;
+      for(let n=1;n<=state.pdf.numPages;n++){
+        say('Rendering page '+n+' of '+state.pdf.numPages+'…');
+        const pdfPage=await state.pdf.getPage(n);
+        const viewport=pdfPage.getViewport({scale:1.5});
+        const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+        await pdfPage.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        const page={number:n,canvas,pdfPage,baseScale:1.5,rotation:0,corners:[],pinning:false};state.pages.push(page);addPageCard(page);
+      }
+      say('PDF ready. Click “Pin 4 corners” on a page, then click the four card corners in order.');
+    }catch(err){console.error(err);say('Could not read this PDF. It may be damaged, encrypted, or unsupported.');}
+  }
+  function getPaper(){return $('paper').value==='a4'?{w:210,h:297}:{w:215.9,h:279.4};}
+  function validSettings(){
+    const w=Number($('width').value),h=Number($('height').value),copies=Number($('copies').value),dpi=Number($('dpi').value);
+    if(!state.front||!state.back){say('Please select both the Front and Back sides.');return null;}
+    if(!(w>=20&&w<=200&&h>=20&&h<=200)){say('Enter valid card dimensions between 20 and 200 mm.');return null;}
+    if(!(copies>=1&&copies<=8)){say('Copies must be between 1 and 8.');return null;}
+    return{w,h,copies,dpi,paper:getPaper(),layout:$('layout').value};
+  }
+  function makeCardCanvas(side,settings){
+    // Fast, lower-resolution straightened card used only for the on-screen layout preview.
+    const dpi=Math.min(settings.dpi,150);
+    return warpFromCanvas(side.page.canvas,side.corners,Math.round(settings.w/25.4*dpi),Math.round(settings.h/25.4*dpi));
+  }
+
+  async function makeHighResolutionCardCanvas(side,settings){
+    // Re-render the ORIGINAL PDF page for export instead of enlarging the preview.
+    const page=side.page, q=side.corners;
+    const outW=Math.round(settings.w/25.4*settings.dpi);
+    const outH=Math.round(settings.h/25.4*settings.dpi);
+
+    // Size of the pinned card in preview pixels (average of opposite edges).
+    const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+    const srcW=Math.max(1,(dist(q[0],q[1])+dist(q[3],q[2]))/2);
+    const srcH=Math.max(1,(dist(q[0],q[3])+dist(q[1],q[2]))/2);
+
+    // Scale needed to provide at least the requested output pixel dimensions.
+    let factor=Math.max(outW/srcW,outH/srcH);
+    // Rendering an entire source page at extreme scale can exhaust browser memory.
+    // Limit the temporary page render to approximately 20 megapixels.
+    const baseW=page.canvas.width, baseH=page.canvas.height;
+    const maxPixels=20000000;
+    const memoryFactor=Math.sqrt(maxPixels/(baseW*baseH));
+    factor=Math.max(1,Math.min(factor,memoryFactor));
+
+    const renderScale=page.baseScale*factor;
+    const viewport=page.pdfPage.getViewport({scale:renderScale});
+    const high=document.createElement('canvas');
+    high.width=Math.ceil(viewport.width);high.height=Math.ceil(viewport.height);
+    const highCtx=high.getContext('2d',{alpha:false});
+    highCtx.fillStyle='#fff';highCtx.fillRect(0,0,high.width,high.height);
+    await page.pdfPage.render({canvasContext:highCtx,viewport}).promise;
+
+    // Apply the same clockwise page rotations used in the preview.
+    let oriented=high;
+    for(let i=0;i<page.rotation;i++){
+      const rotated=document.createElement('canvas');
+      rotated.width=oriented.height;rotated.height=oriented.width;
+      const rc=rotated.getContext('2d',{alpha:false});
+      rc.translate(rotated.width/2,rotated.height/2);
+      rc.rotate(Math.PI/2);
+      rc.drawImage(oriented,-oriented.width/2,-oriented.height/2);
+      if(oriented!==high)oriented.width=oriented.height=1;
+      oriented=rotated;
+    }
+
+    // The pinned corners are in preview pixels; map them to the high-res render,
+    // then straighten the four-corner area into the final card rectangle.
+    const scaleX=oriented.width/page.canvas.width;
+    const scaleY=oriented.height/page.canvas.height;
+    const quad=q.map(p=>({x:p.x*scaleX,y:p.y*scaleY}));
+    const out=warpFromCanvas(oriented,quad,outW,outH);
+
+    // Release large temporary canvases as soon as the crop is complete.
+    high.width=high.height=1;
+    if(oriented!==high)oriented.width=oriented.height=1;
+    return out;
+  }
+  function updateLayoutPreview(){
+    const s=validSettings();if(!s)return;
+    const box=$('layout-preview');box.innerHTML='';
+    const scale=1.35,preview=document.createElement('canvas');preview.width=Math.round(s.paper.w*scale);preview.height=Math.round(s.paper.h*scale);
+    const c=preview.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,preview.width,preview.height);
+    c.strokeStyle='#ccd2dc';c.strokeRect(.5,.5,preview.width-1,preview.height-1);
+    const f=makeCardCanvas(state.front,s),b=makeCardCanvas(state.back,s);
+    const cw=s.w*scale,ch=s.h*scale,gap=5*scale;
+    function place(img,x,y){c.drawImage(img,x,y,cw,ch);c.strokeStyle='#777';c.lineWidth=1;c.strokeRect(x,y,cw,ch);}
+    if(s.layout==='duplex'){
+      place(f,(preview.width-cw)/2,(preview.height-ch)/2);c.fillStyle='#667085';c.font='12px sans-serif';c.fillText('Page 1: Front',10,18);
+    }else if(s.layout==='stack'){
+      place(f,(preview.width-cw)/2,(preview.height-(2*ch+gap))/2);place(b,(preview.width-cw)/2,(preview.height-(2*ch+gap))/2+ch+gap);
+    }else{
+      place(f,(preview.width-(2*cw+gap))/2,(preview.height-ch)/2);place(b,(preview.width-(2*cw+gap))/2+cw+gap,(preview.height-ch)/2);
+    }
+    box.appendChild(preview);
+    $('download').disabled=false;
+  }
+  async function exportPDF(){
+    const s=validSettings();if(!s)return;
+    try{
+      say('Preparing print-ready PDF…');$('download').disabled=true;
+      await loadScript(PDFLIB_URL);
+      const {PDFDocument}=window.PDFLib,doc=await PDFDocument.create();
+      const mm=1/25.4*72,pw=s.paper.w*mm,ph=s.paper.h*mm;
+      say('Rendering the original PDF pages at high resolution…');
+      const f=await makeHighResolutionCardCanvas(state.front,s);
+      const b=await makeHighResolutionCardCanvas(state.back,s);
+      const fImg=await doc.embedPng(f.toDataURL('image/png')),bImg=await doc.embedPng(b.toDataURL('image/png'));
+      const cw=s.w*mm,ch=s.h*mm,gap=5*mm,margin=8*mm;
+      function draw(page,img,x,y){page.drawImage(img,{x,y,width:cw,height:ch});page.drawRectangle({x,y,width:cw,height:ch,borderColor:window.PDFLib.rgb(.45,.45,.45),borderWidth:.35});}
+      function page(){return doc.addPage([pw,ph]);}
+      if(s.layout==='duplex'){
+        for(let i=0;i<s.copies;i++){let p=page();draw(p,fImg,(pw-cw)/2,(ph-ch)/2);p=page();draw(p,bImg,(pw-cw)/2,(ph-ch)/2);}
+      }else{
+        for(let i=0;i<s.copies;i++){
+          const p=page();
+          if(s.layout==='stack'){draw(p,fImg,(pw-cw)/2,(ph-(2*ch+gap))/2+ch+gap);draw(p,bImg,(pw-cw)/2,(ph-(2*ch+gap))/2);}
+          else{draw(p,fImg,(pw-(2*cw+gap))/2,(ph-ch)/2);draw(p,bImg,(pw-(2*cw+gap))/2+cw+gap,(ph-ch)/2);}
+        }
+      }
+      const bytes=await doc.save(),blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
+      state.urls.push(url);const a=document.createElement('a');a.href=url;a.download='id-card-print-ready.pdf';document.body.appendChild(a);a.click();a.remove();
+      say('PDF generated. In the print dialog, choose Actual Size / 100%.');
+    }catch(err){console.error(err);say('PDF export failed. Please try again with a smaller file or fewer copies.');}
+    finally{$('download').disabled=false;}
+  }
+  $('file').addEventListener('change',e=>openPDF(e.target.files[0]));
+  $('drop').addEventListener('dragover',e=>{e.preventDefault();$('drop').style.borderColor='#2457d6';});
+  $('drop').addEventListener('dragleave',()=>{$('drop').style.borderColor='';});
+  $('drop').addEventListener('drop',e=>{e.preventDefault();$('drop').style.borderColor='';openPDF(e.dataTransfer.files[0]);});
+  $('set-front').addEventListener('click',()=>setSide('front'));
+  $('set-back').addEventListener('click',()=>setSide('back'));
+  $('clear').addEventListener('click',()=>{clearState();say('Ready for a PDF.');});
+  $('download').addEventListener('click',exportPDF);
+  ['paper','width','height','layout','copies','dpi'].forEach(id=>$(id).addEventListener('change',updateLayoutPreview));
+  ['width','height'].forEach(id=>$(id).addEventListener('change',refreshSidePreviews));
+})();
+</script>
